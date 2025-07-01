@@ -5,6 +5,11 @@ const ItemSchema = new mongoose.Schema({
     price:Number,
     image:String,
     categoryId:{ type:mongoose.Schema.Types.ObjectId,ref:'Category',required:true},
+    description:String,
+    stock_quantity:Number,
+    discount_limit:Number,
+    cashback_percentage:Number,
+    cashback_limit:Number,
   });
   
   module.exports = mongoose.model('Item', ItemSchema);

@@ -7,10 +7,11 @@ const mongoose = require('mongoose');
 const Category = require('./models/Category.model');
 const categoryController = require('./controllers/categoryController');
 const itemController=require('./controllers/itemController')
+const categoryRoutes = require('./routes/categoryRoute');
+const itemRoutes = require('./routes/itemRoute');
+const connectDB = require('./config/db');
 
-mongoose.connect('mongodb://127.0.0.1:27017/24ElevenTest')
-  .then(() => console.log('Connected to DB!'))
-  .catch((err) => console.log(err));
+connectDB();
 
 app.listen(port,(req,res)=>{
     console.log('server is running !')
@@ -21,5 +22,5 @@ app.get('/',(req,res)=>{
     res.send('hello')
 })
 
-app.get('/Categories', categoryController.getAllCategories);
-app.get('/items/:categoryId', itemController.getItemsByCategory);
+app.use('/', categoryRoutes);
+app.use('/', itemRoutes);
