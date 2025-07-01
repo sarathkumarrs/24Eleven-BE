@@ -1,7 +1,10 @@
 const express=require('express')
 const app=express()
-let port=3000;
+let port=3001;
 app.use(express.json());
+
+const cors = require('cors');
+app.use(cors());
 
 const mongoose = require('mongoose');
 const Category = require('./models/Category.model');
