@@ -138,3 +138,46 @@ exports.getMyFranchiseById = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+exports.findNearestFranchise = async (req, res) => {
+  try {
+    const { latitude, longitude } = req.query;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({ message: "Latitude and longitude are required." });
+    }
+
+    const userCoordinates = [parseFloat(longitude), parseFloat(latitude)];
+
+    const result = await Franchise.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: userCoordinates
+          },
+          distanceField: "distanceInMeters",
+          spherical: true,
+          distanceMultiplier: 0.001 // convert to kilometers
+        }
+      },
+      { $limit: 1 } // Only get the nearest one
+    ]);
+
+    if (!result.length) {
+      return res.status(404).json({ message: "No nearby franchise found." });
+    }
+
+    const nearestFranchise = result[0];
+
+    res.json({
+      franchise: nearestFranchise,
+      distance_km: nearestFranchise.distanceInMeters.toFixed(2)
+    });
+
+  } catch (error) {
+    console.error("Error finding nearest franchise:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

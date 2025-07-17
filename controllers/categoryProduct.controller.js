@@ -205,3 +205,73 @@ exports.getProductsByCategoryPaginated = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+// 🔹 Get paginated & searchable products by franchise
+exports.getFranchiseProductsPaginated = async (req, res) => {
+  try {
+    const { franchiseId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || "";
+
+    const skip = (page - 1) * limit;
+
+    // Step 1: Find category IDs linked to the franchise
+    const categoryIds = await Category.find({ franchise_id: franchiseId }).distinct("_id");
+console.log(categoryIds);
+
+    if (categoryIds.length === 0) {
+      return res.json({
+        products: [],
+        pagination: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0
+        }
+      });
+    }
+
+    // Step 2: Build product query
+    const query = {
+      category_id: { $in: categoryIds }
+    };
+
+    // Optional text search on product name or description
+    if (search.trim() !== "") {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
+      ];
+    }
+    
+
+    // Step 3: Execute paginated query with optional sorting
+    const [products, total] = await Promise.all([
+      Product.find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ name: 1 }) // optional sort
+        .populate("category_id", "name"), // populate category name if needed
+      Product.countDocuments(query)
+    ]);
+
+    // Step 4: Respond with structured pagination data
+    res.json({
+      products,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error("Franchise product fetch error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
